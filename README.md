@@ -112,7 +112,7 @@ Visit `http://127.0.0.1:8000` in your browser.
 | Name | Role |
 |---|---|
 | Chetan Mittal | Team Lead |
-| *Add teammates here* | |
+| Aman Garg | |
 
 ## Roadmap
 
