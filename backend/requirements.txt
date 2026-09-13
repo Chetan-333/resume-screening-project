@@ -3,7 +3,7 @@ uvicorn[standard]
 python-multipart
 pdfplumber
 python-docx
-sentence-transformers
+fastembed
 scikit-learn
 python-dotenv
 langchain
