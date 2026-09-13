@@ -22,11 +22,15 @@ class ResumeGenerateRequest(BaseModel):
     template_id: str
     answers: dict[str, str]
 
-# Allow the frontend (Next.js dev server, and the older Vite one) to call
-# this API during development
+# Allow the frontend (Next.js dev server, the older Vite one, and the
+# deployed frontend URL from FRONTEND_URL) to call this API.
+_allowed_origins = ["http://localhost:3000", "http://localhost:5173"]
+if os.getenv("FRONTEND_URL"):
+    _allowed_origins.append(os.getenv("FRONTEND_URL"))
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:5173"],
+    allow_origins=_allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
