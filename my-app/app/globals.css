@@ -1,0 +1,131 @@
+@import "tailwindcss";
+
+/* A dark, mint-accented "candidate dossier" identity — inspired by the
+   OneAtlas reference (near-black bg, bright mint accent, colored phrase
+   in the headline, pill CTA), adapted to this app's own serif/ledger
+   voice. Toggled manually between night (default) and day. */
+:root {
+  --paper: #0b0d0c;
+  --paper-raised: #141715;
+  --ink: #f5f6f4;
+  --ink-muted: #9aa39c;
+  --line: #262b26;
+  --accent: #2fe6a8;
+  --accent-hover: #58f0be;
+  --on-accent: #06150e;
+  --gold: #e3b341;
+  --gold-soft: #2a2314;
+  --danger: #ff6b57;
+  --danger-soft: #2a1512;
+  --primary: #3525cd;
+  --on-primary: #ffffff;
+  --surface-tint: #4d44e3;
+  --surface-container-lowest: #0f1112;
+  --outline-variant: rgba(255, 255, 255, 0.12);
+}
+
+:root[data-theme="light"] {
+  --paper: #f4f5f1;
+  --paper-raised: #ffffff;
+  --ink: #141c17;
+  --ink-muted: #5b6459;
+  --line: #dbded4;
+  --accent: #1faf83;
+  --accent-hover: #17966f;
+  --on-accent: #ffffff;
+  --gold: #a9782e;
+  --gold-soft: #f1e6cf;
+  --danger: #9a3b2e;
+  --danger-soft: #f7e7e3;
+  --primary: #3525cd;
+  --on-primary: #ffffff;
+  --surface-tint: #4d44e3;
+  --surface-container-lowest: #ffffff;
+  --outline-variant: rgba(24, 32, 35, 0.12);
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-paper-raised: var(--paper-raised);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-on-accent: var(--on-accent);
+  --color-gold: var(--gold);
+  --color-gold-soft: var(--gold-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-primary: var(--primary);
+  --color-on-primary: var(--on-primary);
+  --color-surface-tint: var(--surface-tint);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-serif: var(--font-source-serif);
+}
+
+.font-label-caps {
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+}
+
+.text-label-caps {
+  font-size: 12px;
+  line-height: 16px;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+
+.bg-primary {
+  background-color: var(--primary);
+}
+
+.text-on-primary {
+  color: var(--on-primary);
+}
+
+.hover\:bg-surface-tint:hover {
+  background-color: var(--surface-tint);
+}
+
+.bg-surface-container-lowest {
+  background-color: var(--surface-container-lowest);
+}
+
+.border-outline-variant {
+  border-color: var(--outline-variant);
+}
+
+html {
+  color-scheme: dark;
+}
+
+html[data-theme="light"] {
+  color-scheme: light;
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -5,3 +5,8 @@ pdfplumber
 python-docx
 sentence-transformers
 scikit-learn
+python-dotenv
+langchain
+langchain-groq
+xhtml2pdf
+jinja2

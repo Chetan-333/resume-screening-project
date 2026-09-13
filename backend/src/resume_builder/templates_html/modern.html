@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<style>
+  @page { size: A4; margin: 0; }
+  body { font-family: Helvetica, Arial, sans-serif; color: #222222; font-size: 10.5pt; margin: 0; }
+  table.layout { width: 100%; border-collapse: collapse; }
+  td.sidebar { width: 32%; background-color: #2b2f38; color: #ffffff; padding: 24px 16px; vertical-align: top; }
+  td.main { width: 68%; padding: 24px 20px; vertical-align: top; }
+  .sidebar h2 { color: #9fb4d8; font-size: 9.5pt; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #4a4f5a; padding-bottom: 3px; margin: 18px 0 6px 0; }
+  .sidebar h2.first { margin-top: 0; }
+  .sidebar p, .sidebar li { font-size: 9.5pt; line-height: 1.5; }
+  .sidebar ul { margin: 0; padding-left: 14px; }
+  h1 { font-size: 20pt; margin: 0 0 2px 0; color: #1a1a1a; }
+  .role { font-size: 11.5pt; color: #2b6cb0; margin: 0 0 12px 0; }
+  .main h2 { color: #2b6cb0; font-size: 11pt; text-transform: uppercase; letter-spacing: 1px; margin: 16px 0 6px 0; }
+  .main h2.first { margin-top: 0; }
+  .job-title { font-size: 11pt; font-weight: bold; margin: 8px 0 0 0; }
+  .dates { font-size: 9pt; color: #666666; margin: 0 0 4px 0; }
+  .main ul { margin: 4px 0 0 0; padding-left: 16px; }
+  .main li { margin-bottom: 3px; }
+  p.summary { margin: 0; line-height: 1.4; }
+</style>
+</head>
+<body>
+<table class="layout">
+  <tr>
+    <td class="sidebar">
+      <h2 class="first">Contact</h2>
+      <p>{{ contact.email }}<br/>{{ contact.phone }}{% if contact.linkedin %}<br/>{{ contact.linkedin }}{% endif %}</p>
+
+      {% if skills %}
+      <h2>Skills</h2>
+      <ul>
+        {% for skill in skills %}<li>{{ skill }}</li>{% endfor %}
+      </ul>
+      {% endif %}
+
+      {% if education %}
+      <h2>Education</h2>
+      {% for edu in education %}
+        <p>{{ edu.school }}<br/>{{ edu.degree }}{% if edu.year %}, {{ edu.year }}{% endif %}</p>
+      {% endfor %}
+      {% endif %}
+    </td>
+    <td class="main">
+      <h1>{{ name }}</h1>
+      <p class="role">{{ target_role }}</p>
+
+      <h2 class="first">Summary</h2>
+      <p class="summary">{{ summary }}</p>
+
+      {% if experience %}
+      <h2>Experience</h2>
+      {% for job in experience %}
+        <p class="job-title">{{ job.title }} &mdash; {{ job.company }}</p>
+        <p class="dates">{{ job.dates }}</p>
+        <ul>
+          {% for bullet in job.bullets %}<li>{{ bullet }}</li>{% endfor %}
+        </ul>
+      {% endfor %}
+      {% endif %}
+
+      {% if projects %}
+      <h2>Projects</h2>
+      {% for project in projects %}
+        <p class="job-title">{{ project.name }}</p>
+        <p class="dates">{{ project.description }}</p>
+      {% endfor %}
+      {% endif %}
+    </td>
+  </tr>
+</table>
+</body>
+</html>
