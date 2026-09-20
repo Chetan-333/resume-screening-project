@@ -4,12 +4,14 @@ import tempfile
 from typing import List
 
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Response
+from fastapi.concurrency import run_in_threadpool
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from src.parser.resume_parser import parse_resume
 from src.nlp.embeddings import get_embedding
-from src.ranking.ranker import rank_resumes, score_resume
+from src.ranking.ranker import score_resume
+from src.screening.graph import run_screening
 from src.ai.feedback import get_resume_feedback
 from src.resume_builder.templates import TEMPLATES, get_template
 from src.resume_builder.generator import generate_resume_content
@@ -46,11 +48,16 @@ def read_root():
 async def rank_resumes_endpoint(
     job_description: str = Form(...),
     resumes: List[UploadFile] = File(...),
+    include_experience: bool = Form(True),
 ):
     """
     Accepts a job description and multiple resume files (PDF/DOCX),
     parses each resume, scores it against the job description, and
     returns them ranked from most to least relevant.
+
+    With include_experience on (default), the final score also weighs the
+    quality of each candidate's work experience (company tier, scored by an
+    LLM). Turn it off for a pure similarity ranking.
     """
     parsed_resumes = []
 
@@ -71,12 +78,11 @@ async def rank_resumes_endpoint(
         finally:
             os.remove(tmp_path)
 
-    ranked = rank_resumes(parsed_resumes, job_description)
-
-    # Don't send the full raw text back to the frontend, just filename + score
-    results = [{"filename": r["filename"], "score": r["score"]} for r in ranked]
-
-    return {"results": results}
+    # The pipeline does blocking model and network calls, so keep it off the event loop.
+    # Raw resume text stays on the server; only scores and experience details go back.
+    return await run_in_threadpool(
+        run_screening, job_description, parsed_resumes, include_experience
+    )
 
 
 @app.post("/api/analyze")

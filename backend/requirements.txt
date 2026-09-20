@@ -8,5 +8,7 @@ scikit-learn
 python-dotenv
 langchain
 langchain-groq
+langgraph
+redis
 xhtml2pdf
 jinja2

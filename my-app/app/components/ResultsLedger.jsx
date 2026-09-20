@@ -4,6 +4,15 @@ import { useMemo, useState } from "react";
 import ScoreRing from "./ScoreRing";
 import { rankResults } from "../lib/matchBand";
 
+function experienceSummary(experience) {
+  if (experience.status === "scored") {
+    const { best, score } = experience;
+    return `Experience ${score}/10 (${best.company}, tier ${best.tier})`;
+  }
+  if (experience.status === "none") return "No work experience found";
+  return "Experience couldn't be read";
+}
+
 export default function ResultsLedger({
   results,
   title = "Results",
@@ -99,6 +108,15 @@ export default function ResultsLedger({
                     >
                       {r.isTop ? "Top match" : r.band.label}
                     </span>
+                    {r.experience && (
+                      <span
+                        className="truncate text-xs text-ink-muted"
+                        title={r.experience.best?.reason}
+                      >
+                        Similarity {r.similarity.toFixed(4)} &middot;{" "}
+                        {experienceSummary(r.experience)}
+                      </span>
+                    )}
                   </div>
 
                   <div className="flex items-center gap-3">

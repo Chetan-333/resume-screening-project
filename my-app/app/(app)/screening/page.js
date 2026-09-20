@@ -23,6 +23,8 @@ export default function Home() {
   const [jobDescription, setJobDescription] = useState("");
   const [files, setFiles] = useState([]);
   const [results, setResults] = useState(null);
+  const [weights, setWeights] = useState(null);
+  const [includeExperience, setIncludeExperience] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [isDragging, setIsDragging] = useState(false);
@@ -87,6 +89,7 @@ export default function Home() {
 
     const formData = new FormData();
     formData.append("job_description", jobDescription);
+    formData.append("include_experience", includeExperience ? "true" : "false");
     for (const file of files) {
       formData.append("resumes", file);
     }
@@ -106,6 +109,7 @@ export default function Home() {
 
       const data = await res.json();
       setResults(data.results || []);
+      setWeights(data.weights || null);
 
       // Save this run so the Dashboard can show the most recent screening.
       try {
@@ -223,6 +227,23 @@ export default function Home() {
             )}
           </div>
 
+          <label className="flex cursor-pointer items-start gap-3 text-sm text-ink">
+            <input
+              type="checkbox"
+              checked={includeExperience}
+              onChange={(e) => setIncludeExperience(e.target.checked)}
+              className="mt-1 h-4 w-4 accent-[var(--accent)]"
+            />
+            <span className="flex flex-col gap-0.5">
+              <span>Also weigh work-experience quality</span>
+              <span className="text-xs text-ink-muted">
+                Scores each candidate&apos;s employers (e.g. well-known company
+                vs. small startup) and blends it into the ranking. Slower than
+                similarity alone.
+              </span>
+            </span>
+          </label>
+
           <button
             type="submit"
             disabled={loading}
@@ -239,7 +260,16 @@ export default function Home() {
         )}
 
         {/* Results */}
-        {results && <ResultsLedger results={results} />}
+        {results && (
+          <ResultsLedger
+            results={results}
+            subtitle={
+              weights && weights.experience > 0
+                ? `Final score = ${Math.round(weights.similarity * 100)}% resume similarity + ${Math.round(weights.experience * 100)}% work experience.`
+                : undefined
+            }
+          />
+        )}
       </main>
     </div>
   );
