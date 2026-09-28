@@ -38,6 +38,19 @@ export default function ThemeToggle({ className = "" }) {
     return current === "dark" || current === "light" ? current : "dark";
   });
 
+  // Stay in sync when the theme is changed elsewhere (e.g. the top navbar).
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      const current = document.documentElement.getAttribute("data-theme");
+      if (current === "dark" || current === "light") setTheme(current);
+    });
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["data-theme"],
+    });
+    return () => observer.disconnect();
+  }, []);
+
   function toggleTheme() {
     const next = theme === "dark" ? "light" : "dark";
     setTheme(next);

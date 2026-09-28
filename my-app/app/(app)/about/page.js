@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import VideoBackdrop from "@/components/VideoBackdrop";
 
 export const metadata = {
   title: "About — Resume Screening",
@@ -34,7 +35,8 @@ const stack = [
 
 export default function About() {
   return (
-    <div className="flex flex-1 justify-center bg-paper">
+    <div className="relative flex flex-1 justify-center">
+      <VideoBackdrop src="/about-bg.mp4" poster="/about-bg-poster.jpg" />
       <main className="flex w-full max-w-4xl flex-col gap-16 px-6 py-16 sm:py-20">
         {/* Hero: description left, reference screenshot right */}
         <header className="grid grid-cols-1 items-center gap-10 sm:grid-cols-[1fr_320px]">

@@ -1,10 +1,10 @@
-import Sidebar from "@/app/components/Sidebar";
+import AppShell from "@/components/AppShell";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 export default function AppLayout({ children }) {
   return (
-    <div className="flex min-h-full flex-1 flex-col sm:flex-row">
-      <Sidebar />
-      <div className="flex flex-1 flex-col">{children}</div>
-    </div>
+    <TooltipProvider delayDuration={150}>
+      <AppShell>{children}</AppShell>
+    </TooltipProvider>
   );
 }
