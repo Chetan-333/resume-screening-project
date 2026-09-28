@@ -26,7 +26,7 @@ class ResumeGenerateRequest(BaseModel):
 
 # Allow the frontend (Next.js dev server, the older Vite one, and the
 # deployed frontend URL from FRONTEND_URL) to call this API.
-_allowed_origins = ["http://localhost:3000", "http://localhost:5173"]
+_allowed_origins = ["http://localhost:3000", "http://localhost:3001", "http://localhost:5173"]
 if os.getenv("FRONTEND_URL"):
     _allowed_origins.append(os.getenv("FRONTEND_URL"))
 
