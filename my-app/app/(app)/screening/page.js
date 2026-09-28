@@ -1,7 +1,11 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
-import ResultsLedger from "@/app/components/ResultsLedger";
+import { useCallback, useState } from "react";
+import Hero from "@/components/screening/Hero";
+import HowItWorks from "@/components/screening/HowItWorks";
+import ResultsPanel from "@/components/screening/ResultsPanel";
+import ScoreExplainer from "@/components/screening/ScoreExplainer";
+import ScreeningForm from "@/components/screening/ScreeningForm";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
 const LAST_SCREENING_KEY = "lastScreening";
@@ -12,13 +16,6 @@ function isAcceptedFile(file) {
   return ACCEPTED_EXTENSIONS.some((ext) => name.endsWith(ext));
 }
 
-const ruledPaperStyle = {
-  backgroundImage:
-    "repeating-linear-gradient(to bottom, transparent, transparent 27px, var(--line) 28px)",
-  backgroundAttachment: "local",
-  lineHeight: "28px",
-};
-
 export default function Home() {
   const [jobDescription, setJobDescription] = useState("");
   const [files, setFiles] = useState([]);
@@ -27,48 +24,21 @@ export default function Home() {
   const [includeExperience, setIncludeExperience] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [isDragging, setIsDragging] = useState(false);
-  const fileInputRef = useRef(null);
 
   const addFiles = useCallback((incoming) => {
-    setFiles((prev) => {
-      const accepted = incoming.filter(isAcceptedFile);
-      const skipped = incoming.length - accepted.length;
-      if (skipped > 0) {
-        setError(
-          `Skipped ${skipped} file${skipped > 1 ? "s" : ""} — only PDF and DOCX are supported.`
-        );
-      }
-      const existingKeys = new Set(prev.map((f) => `${f.name}-${f.size}`));
-      const deduped = accepted.filter(
-        (f) => !existingKeys.has(`${f.name}-${f.size}`)
+    const accepted = incoming.filter(isAcceptedFile);
+    const skipped = incoming.length - accepted.length;
+    if (skipped > 0) {
+      setError(
+        `Skipped ${skipped} file${skipped > 1 ? "s" : ""} — only PDF and DOCX are supported.`
       );
+    }
+    setFiles((prev) => {
+      const existingKeys = new Set(prev.map((f) => `${f.name}-${f.size}`));
+      const deduped = accepted.filter((f) => !existingKeys.has(`${f.name}-${f.size}`));
       return [...prev, ...deduped];
     });
   }, []);
-
-  function handleFileInputChange(e) {
-    const picked = Array.from(e.target.files || []);
-    if (picked.length > 0) addFiles(picked);
-    e.target.value = "";
-  }
-
-  function handleDrop(e) {
-    e.preventDefault();
-    setIsDragging(false);
-    const dropped = Array.from(e.dataTransfer.files || []);
-    if (dropped.length > 0) addFiles(dropped);
-  }
-
-  function handleDragOver(e) {
-    e.preventDefault();
-    setIsDragging(true);
-  }
-
-  function handleDragLeave(e) {
-    e.preventDefault();
-    setIsDragging(false);
-  }
 
   function removeFile(index) {
     setFiles((prev) => prev.filter((_, i) => i !== index));
@@ -125,6 +95,10 @@ export default function Home() {
       } catch {
         // localStorage unavailable — Dashboard will just show its empty state
       }
+
+      requestAnimationFrame(() => {
+        document.getElementById("results")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
     } catch (err) {
       setError(
         err.message ||
@@ -137,139 +111,23 @@ export default function Home() {
 
   return (
     <div className="flex flex-1 justify-center bg-paper">
-      <main className="flex w-full max-w-xl flex-col gap-10 px-6 py-16 sm:py-20">
-        {/* Header */}
-        <header className="flex flex-col gap-4">
-          <span className="inline-flex w-fit items-center gap-2 rounded-full border border-line px-3 py-1 text-xs text-ink-muted">
-            <span className="h-1.5 w-1.5 rounded-full bg-accent" aria-hidden="true" />
-            Cosine similarity ranking &middot; PDF &amp; DOCX supported
-          </span>
-          <h1 className="font-serif text-[2.1rem] font-semibold leading-[1.15] text-ink sm:text-[2.5rem]">
-            Turn a stack of resumes into a{" "}
-            <span className="text-accent">ranked shortlist</span>
-          </h1>
-          <p className="max-w-[46ch] text-[15px] leading-relaxed text-ink-muted">
-            Drop in a job description and candidate resumes. Get back a
-            shortlist sorted by fit, in seconds.
-          </p>
-        </header>
-
-        <form onSubmit={handleSubmit} className="flex flex-col gap-8">
-          {/* Job description */}
-          <div className="flex flex-col gap-2">
-            <label htmlFor="job-description" className="text-sm text-ink">
-              The role
-            </label>
-            <textarea
-              id="job-description"
-              rows={7}
-              value={jobDescription}
-              onChange={(e) => setJobDescription(e.target.value)}
-              placeholder="Paste the job description here..."
-              style={ruledPaperStyle}
-              className="w-full resize-none border-0 border-b border-line bg-paper-raised px-3 pt-2 text-[15px] text-ink placeholder:text-ink-muted/60 outline-none focus:ring-1 focus:ring-accent"
-            />
-          </div>
-
-          {/* Candidates */}
-          <div className="flex flex-col gap-2">
-            <label className="text-sm text-ink">Candidates</label>
-
-            <div
-              onClick={() => fileInputRef.current?.click()}
-              onDrop={handleDrop}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              className={`flex cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border px-4 py-9 text-center transition-colors ${
-                isDragging
-                  ? "border-accent bg-gold-soft/40"
-                  : "border-dashed border-ink-muted/40 bg-paper-raised hover:border-ink-muted/70"
-              }`}
-            >
-              <p className="text-[15px] text-ink">
-                Click to browse, or drag resumes in
-              </p>
-              <p className="text-xs text-ink-muted">PDF or DOCX</p>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".pdf,.docx"
-                multiple
-                onChange={handleFileInputChange}
-                className="hidden"
-              />
-            </div>
-
-            {files.length > 0 && (
-              <ul className="flex flex-col divide-y divide-line rounded-lg border border-line bg-paper-raised">
-                {files.map((file, i) => (
-                  <li
-                    key={`${file.name}-${file.size}-${i}`}
-                    className="flex items-center gap-3 px-3 py-2 text-[14px]"
-                  >
-                    <span className="w-5 shrink-0 font-mono text-xs text-ink-muted">
-                      {String(i + 1).padStart(2, "0")}
-                    </span>
-                    <span className="flex-1 truncate text-ink">
-                      {file.name}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => removeFile(i)}
-                      className="shrink-0 text-xs text-ink-muted hover:text-danger"
-                      aria-label={`Remove ${file.name}`}
-                    >
-                      Remove
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-
-          <label className="flex cursor-pointer items-start gap-3 text-sm text-ink">
-            <input
-              type="checkbox"
-              checked={includeExperience}
-              onChange={(e) => setIncludeExperience(e.target.checked)}
-              className="mt-1 h-4 w-4 accent-[var(--accent)]"
-            />
-            <span className="flex flex-col gap-0.5">
-              <span>Also weigh work-experience quality</span>
-              <span className="text-xs text-ink-muted">
-                Scores each candidate&apos;s employers (e.g. well-known company
-                vs. small startup) and blends it into the ranking. Slower than
-                similarity alone.
-              </span>
-            </span>
-          </label>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="flex h-11 w-full items-center justify-center rounded-full bg-accent text-sm font-medium text-on-accent transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {loading ? "Ranking candidates…" : "Rank candidates"}
-          </button>
-        </form>
-
-        {error && (
-          <p className="border border-danger/30 bg-danger-soft px-3 py-2 text-sm text-danger">
-            {error}
-          </p>
-        )}
-
-        {/* Results */}
-        {results && (
-          <ResultsLedger
-            results={results}
-            subtitle={
-              weights && weights.experience > 0
-                ? `Final score = ${Math.round(weights.similarity * 100)}% resume similarity + ${Math.round(weights.experience * 100)}% work experience.`
-                : undefined
-            }
-          />
-        )}
+      <main className="flex w-full max-w-6xl flex-col gap-20 px-6 py-12 sm:py-16">
+        <Hero />
+        <HowItWorks />
+        <ScreeningForm
+          jobDescription={jobDescription}
+          onJobDescriptionChange={setJobDescription}
+          files={files}
+          onAddFiles={addFiles}
+          onRemoveFile={removeFile}
+          includeExperience={includeExperience}
+          onIncludeExperienceChange={setIncludeExperience}
+          loading={loading}
+          error={error}
+          onSubmit={handleSubmit}
+        />
+        <ResultsPanel results={results} weights={weights} loading={loading} />
+        <ScoreExplainer />
       </main>
     </div>
   );

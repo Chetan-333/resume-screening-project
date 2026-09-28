@@ -111,7 +111,7 @@ function NavIcon({ label, ...props }) {
   }
 }
 
-export default function Sidebar() {
+export default function Sidebar({ collapsed = false }) {
   const pathname = usePathname();
   const [backendStatus, setBackendStatus] = useState("checking"); // checking | online | offline
   const [menuOpen, setMenuOpen] = useState(false);
@@ -144,8 +144,10 @@ export default function Sidebar() {
       ? "bg-danger"
       : "bg-ink-muted";
 
-  const linkClass = (href) =>
-    `flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors ${
+  const linkClass = (href, rail = false) =>
+    `flex items-center rounded-md py-2 text-sm transition-colors ${
+      rail ? "justify-center px-0" : "gap-3 px-3"
+    } ${
       pathname === href
         ? "bg-accent text-on-accent"
         : "text-ink-muted hover:bg-paper hover:text-ink"
@@ -154,30 +156,48 @@ export default function Sidebar() {
   return (
     <>
       {/* Desktop sidebar */}
-      <aside className="sticky top-0 hidden h-screen w-56 shrink-0 flex-col justify-between border-r border-line bg-paper-raised px-4 py-6 sm:flex">
+      <aside
+        className={`sticky top-0 hidden h-screen shrink-0 flex-col justify-between border-r border-line bg-paper-raised py-6 transition-[width] duration-200 sm:flex ${
+          collapsed ? "w-16 px-2" : "w-56 px-4"
+        }`}
+      >
         <div className="flex flex-col gap-8">
-          <Link href="/screening" className="flex items-center gap-2 px-2 text-[14px] text-ink">
+          <Link
+            href="/screening"
+            title={collapsed ? "Resume Screening" : undefined}
+            aria-label="Resume Screening"
+            className={`flex items-center gap-2 text-[14px] text-ink ${collapsed ? "justify-center" : "px-2"}`}
+          >
             <LedgerMark />
-            Resume Screening
+            {!collapsed && "Resume Screening"}
           </Link>
           <nav className="flex flex-col gap-1">
             {NAV_LINKS.map((link) => (
-              <Link key={link.href} href={link.href} className={linkClass(link.href)}>
+              <Link
+                key={link.href}
+                href={link.href}
+                title={collapsed ? link.label : undefined}
+                aria-label={link.label}
+                className={linkClass(link.href, collapsed)}
+              >
                 <NavIcon label={link.label} className="h-4 w-4 shrink-0" />
-                {link.label}
+                {!collapsed && link.label}
               </Link>
             ))}
           </nav>
         </div>
 
-        <div className="flex items-center gap-1.5 px-2 text-xs text-ink-muted" title={statusLabel}>
+        <div
+          className={`flex items-center gap-1.5 text-xs text-ink-muted ${collapsed ? "justify-center" : "px-2"}`}
+          title={statusLabel}
+        >
           <span
-            className={`h-1.5 w-1.5 rounded-full ${statusDotClass} ${
+            className={`h-1.5 w-1.5 shrink-0 rounded-full ${statusDotClass} ${
               backendStatus === "checking" ? "animate-pulse" : ""
             }`}
             aria-hidden="true"
           />
-          {statusLabel}
+          {collapsed ? <span className="sr-only">{statusLabel}</span> : statusLabel}
         </div>
       </aside>
 

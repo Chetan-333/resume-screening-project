@@ -1,4 +1,8 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+
+/* shadcn "dark:" variant: dark unless the app is switched to the light theme */
+@custom-variant dark (&:not(:where([data-theme="light"], [data-theme="light"] *)));
 
 /* A dark, mint-accented "candidate dossier" identity — inspired by the
    OneAtlas reference (near-black bg, bright mint accent, colored phrase
@@ -22,6 +26,7 @@
   --surface-tint: #4d44e3;
   --surface-container-lowest: #0f1112;
   --outline-variant: rgba(255, 255, 255, 0.12);
+  --surface-2: #1c201d;
 }
 
 :root[data-theme="light"] {
@@ -42,9 +47,29 @@
   --surface-tint: #4d44e3;
   --surface-container-lowest: #ffffff;
   --outline-variant: rgba(24, 32, 35, 0.12);
+  --surface-2: #ebede5;
 }
 
 @theme inline {
+  /* shadcn/ui semantic colors, mapped onto the app's existing palette.
+     "brand" is the mint action color (shadcn calls it "primary"); the app's
+     own accent/primary tokens are left untouched. */
+  --color-background: var(--paper);
+  --color-foreground: var(--ink);
+  --color-card: var(--paper-raised);
+  --color-card-foreground: var(--ink);
+  --color-popover: var(--paper-raised);
+  --color-popover-foreground: var(--ink);
+  --color-brand: var(--accent);
+  --color-brand-foreground: var(--on-accent);
+  --color-secondary: var(--surface-2);
+  --color-secondary-foreground: var(--ink);
+  --color-muted: var(--surface-2);
+  --color-muted-foreground: var(--ink-muted);
+  --color-destructive: var(--danger);
+  --color-border: var(--line);
+  --color-input: var(--line);
+  --color-ring: var(--accent);
   --color-paper: var(--paper);
   --color-paper-raised: var(--paper-raised);
   --color-ink: var(--ink);
@@ -127,5 +152,11 @@ body {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
   }
 }
