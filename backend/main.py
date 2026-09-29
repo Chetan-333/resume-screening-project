@@ -1,7 +1,7 @@
 import os
 import shutil
 import tempfile
-from typing import List
+from typing import Any, List
 
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Response
 from fastapi.concurrency import run_in_threadpool
@@ -22,7 +22,15 @@ app = FastAPI(title="Resume Screening API")
 
 class ResumeGenerateRequest(BaseModel):
     template_id: str
-    answers: dict[str, str]
+    # Plain questions answer with a string; "entries" questions (work
+    # experience, education, projects) with a list of dicts; "tags"
+    # questions (skills) with a list of strings.
+    answers: dict[str, Any]
+
+
+class ResumePdfRequest(BaseModel):
+    template_id: str
+    content: dict
 
 # Allow the frontend (Next.js dev server, the older Vite one, and the
 # deployed frontend URL from FRONTEND_URL) to call this API.
@@ -135,25 +143,58 @@ def get_resume_templates():
     return {"templates": TEMPLATES}
 
 
+def _validate_answers(template_id: str, answers: dict[str, Any]) -> dict:
+    template = get_template(template_id)
+    if not template:
+        raise HTTPException(status_code=400, detail=f"Unknown template_id: {template_id}")
+
+    missing = []
+    for question in template["questions"]:
+        if not question.get("required"):
+            continue
+        value = answers.get(question["key"])
+        qtype = question.get("type")
+
+        if qtype == "entries":
+            entries = [
+                e for e in (value or [])
+                if isinstance(e, dict) and any(str(v or "").strip() for v in e.values())
+            ]
+            if not entries:
+                missing.append(question["label"])
+                continue
+            for entry in entries:
+                for field in question.get("fields", []):
+                    if field.get("required") and not str(entry.get(field["key"]) or "").strip():
+                        missing.append(f"{question['label']} — {field['label']}")
+        elif qtype == "tags":
+            tags = [t for t in (value or []) if str(t or "").strip()]
+            if not tags:
+                missing.append(question["label"])
+        else:
+            if not str(value or "").strip():
+                missing.append(question["label"])
+
+    if missing:
+        # dict.fromkeys dedupes while keeping the first-seen order.
+        missing = list(dict.fromkeys(missing))
+        raise HTTPException(status_code=400, detail=f"Missing required fields: {', '.join(missing)}")
+
+    return template
+
+
 @app.post("/api/resume/generate")
 def generate_resume_endpoint(payload: ResumeGenerateRequest):
     """
     Accepts a template id and the user's answers to that template's
     predefined questions. Expands the answers into polished resume
     content via an LLM, renders it into the chosen template, and returns
-    a downloadable PDF.
+    a downloadable PDF directly. Kept for backward compatibility; the
+    builder UI now uses /api/resume/preview + /api/resume/pdf instead, so
+    a live preview and the final download always match without paying for
+    a second LLM call.
     """
-    template = get_template(payload.template_id)
-    if not template:
-        raise HTTPException(status_code=400, detail=f"Unknown template_id: {payload.template_id}")
-
-    missing = [
-        question["label"]
-        for question in template["questions"]
-        if question.get("required") and not (payload.answers.get(question["key"]) or "").strip()
-    ]
-    if missing:
-        raise HTTPException(status_code=400, detail=f"Missing required fields: {', '.join(missing)}")
+    _validate_answers(payload.template_id, payload.answers)
 
     try:
         content = generate_resume_content(payload.template_id, payload.answers)
@@ -161,6 +202,53 @@ def generate_resume_endpoint(payload: ResumeGenerateRequest):
         raise HTTPException(status_code=502, detail=str(exc))
 
     html = render_resume_html(payload.template_id, content)
+
+    try:
+        pdf_bytes = render_pdf(html)
+    except RuntimeError as exc:
+        raise HTTPException(status_code=502, detail=str(exc))
+
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": "attachment; filename=resume.pdf"},
+    )
+
+
+@app.post("/api/resume/preview")
+def preview_resume_endpoint(payload: ResumeGenerateRequest):
+    """
+    Same inputs as /api/resume/generate, but returns the rendered HTML
+    (for an on-page preview) plus the structured content the LLM produced,
+    instead of a PDF. The frontend sends that same content straight back
+    to /api/resume/pdf to download, so the LLM only runs once per preview
+    and the preview always matches the downloaded file exactly.
+    """
+    _validate_answers(payload.template_id, payload.answers)
+
+    try:
+        content = generate_resume_content(payload.template_id, payload.answers)
+    except RuntimeError as exc:
+        raise HTTPException(status_code=502, detail=str(exc))
+
+    html = render_resume_html(payload.template_id, content)
+    return {"html": html, "content": content}
+
+
+@app.post("/api/resume/pdf")
+def resume_pdf_endpoint(payload: ResumePdfRequest):
+    """
+    Renders already-generated resume content (from /api/resume/preview)
+    into a downloadable PDF. Does not call the LLM, so this is fast and
+    produces exactly what was shown in the preview.
+    """
+    if not get_template(payload.template_id):
+        raise HTTPException(status_code=400, detail=f"Unknown template_id: {payload.template_id}")
+
+    try:
+        html = render_resume_html(payload.template_id, payload.content)
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=f"Couldn't render resume content: {exc}")
 
     try:
         pdf_bytes = render_pdf(html)

@@ -35,11 +35,30 @@ _PROMPT = ChatPromptTemplate.from_messages(
             "Rules:\n"
             "- Expand short or informal answers into professional language; "
             "do not just copy the input verbatim.\n"
-            "- summary: 2-4 polished sentences.\n"
+            "- Never invent facts: no specific company names, technologies, "
+            "tools, metrics, numbers, or achievements that are not stated "
+            "or clearly implied somewhere in the candidate's own answers. "
+            "You may rephrase and add generic connective language, but "
+            "every concrete claim must be traceable to something the "
+            "candidate actually wrote.\n"
+            "- If an answer is empty, a single dash, or unintelligible "
+            "keyboard mashing with no real words (e.g. 'gvdsacjjas dsca'), "
+            "treat that field as not provided: leave the corresponding "
+            "output empty/generic rather than fabricating content for it. "
+            "Do not let the target role alone justify inventing specific "
+            "skills or experience.\n"
+            "- summary: 2-4 polished sentences built only from what the "
+            "candidate actually provided (their real skills, real "
+            "experience, target role). If too little was provided for a "
+            "real summary, write a short, honest, generic one instead of "
+            "padding it with invented specifics.\n"
             "- Each experience bullet must start with an action verb and be "
-            "achievement-oriented.\n"
+            "achievement-oriented, and must be grounded in what the "
+            "candidate wrote for that role — do not add outcomes, metrics, "
+            "or tools they didn't mention.\n"
             "- skills: a clean, deduplicated list (split any comma or "
-            "newline separated input).\n"
+            "newline separated input). Only include skills the candidate "
+            "actually listed.\n"
             "- If the candidate provided no projects, certifications, "
             "LinkedIn/portfolio URL, or work experience (e.g. the answer is "
             "blank, '-', or says 'none'/'no experience'), return an empty "
@@ -54,7 +73,11 @@ _PROMPT = ChatPromptTemplate.from_messages(
         ),
         (
             "human",
-            "Here are the candidate's raw notes, one field per line:\n"
+            "Here are the candidate's raw notes, one field per line. A "
+            "field with multiple entries (like work experience, education, "
+            "or projects) lists one entry per line, prefixed with '-', "
+            "with that entry's own pieces of information separated by "
+            "semicolons:\n"
             "{answers_text}",
         ),
     ]
@@ -105,6 +128,31 @@ def _drop_placeholder_entries(items: list, *fields: str) -> list:
     return cleaned
 
 
+def _format_value(value) -> str:
+    """
+    Turns one answer's value into readable text for the prompt. Plain
+    text/textarea answers are strings already; "entries" fields (work
+    experience, education, projects) arrive as a list of dicts, one per
+    entry; "tags" fields (skills) arrive as a list of strings.
+    """
+    if isinstance(value, list):
+        if not value:
+            return ""
+        if value and isinstance(value[0], dict):
+            lines = []
+            for entry in value:
+                parts = [
+                    f"{key}: {entry_value}"
+                    for key, entry_value in entry.items()
+                    if str(entry_value or "").strip()
+                ]
+                if parts:
+                    lines.append("- " + "; ".join(parts))
+            return "\n" + "\n".join(lines) if lines else ""
+        return ", ".join(str(v) for v in value if str(v or "").strip())
+    return str(value or "")
+
+
 def _get_llm():
     api_key = os.getenv("GROQ_API_KEY")
     if not api_key:
@@ -129,7 +177,9 @@ def generate_resume_content(template_id: str, answers: dict) -> dict:
     chain = _PROMPT | llm | parser
 
     answers_text = "\n".join(
-        f"{key}: {value}" for key, value in answers.items() if value
+        f"{key}: {formatted}"
+        for key, value in answers.items()
+        if (formatted := _format_value(value)).strip()
     )
 
     try:

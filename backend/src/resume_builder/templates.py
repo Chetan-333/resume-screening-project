@@ -3,6 +3,18 @@ Template + question metadata for the resume builder. This is the single
 source of truth: the frontend fetches it via GET /api/resume/templates
 and renders whatever questions are listed here, rather than hardcoding
 question sets on the client.
+
+Question types:
+- "text" / "textarea": a single string answer.
+- "entries": a repeatable group of structured fields (e.g. one entry per
+  job or school). Its value is a list of {field_key: value} dicts. Each
+  sub-field can be marked required independently of the group itself.
+  `primaryFields` / `dateField` tell the UI which sub-fields to use as an
+  entry's title line and date line; `entryLabel` names one entry (e.g.
+  "Job") for its "Add ..." button; `sectionLabel` is the heading to show
+  once it's rendered into a resume section.
+- "tags": a repeatable list of short strings (e.g. skills), entered as
+  chips rather than free text.
 """
 
 TEMPLATES = [
@@ -15,11 +27,40 @@ TEMPLATES = [
             {"key": "email", "label": "Email address", "type": "text", "placeholder": "", "required": True},
             {"key": "phone", "label": "Phone number", "type": "text", "placeholder": "", "required": True},
             {"key": "target_role", "label": "Target job title", "type": "text", "placeholder": "e.g. Senior Accountant", "required": True},
-            {"key": "summary_hint", "label": "In a sentence or two, how would you describe your professional background?", "type": "textarea", "placeholder": "", "required": True},
-            {"key": "experience_hint", "label": "List your work history: company, role, dates, and 1-2 things you did at each", "type": "list", "placeholder": "One entry per line", "required": True},
-            {"key": "education_hint", "label": "List your education: school, degree, year", "type": "list", "placeholder": "One entry per line", "required": True},
-            {"key": "skills_hint", "label": "List your key skills, separated by commas", "type": "text", "placeholder": "", "required": True},
-            {"key": "certifications_hint", "label": "Any certifications or licenses? (optional)", "type": "text", "placeholder": "", "required": False},
+            {"key": "summary_hint", "label": "In a sentence or two, how would you describe your professional background?", "sectionLabel": "Summary", "type": "textarea", "placeholder": "", "required": True},
+            {
+                "key": "experience_hint",
+                "label": "Work experience",
+                "sectionLabel": "Experience",
+                "type": "entries",
+                "required": True,
+                "entryLabel": "Job",
+                "primaryFields": ["title", "company"],
+                "dateField": "dates",
+                "fields": [
+                    {"key": "company", "label": "Company", "type": "text", "placeholder": "", "required": True},
+                    {"key": "title", "label": "Role", "type": "text", "placeholder": "", "required": True},
+                    {"key": "dates", "label": "Dates", "type": "text", "placeholder": "e.g. Jan 2023 – Present", "required": False},
+                    {"key": "description", "label": "What did you do there?", "type": "textarea", "placeholder": "", "required": True},
+                ],
+            },
+            {
+                "key": "education_hint",
+                "label": "Education",
+                "sectionLabel": "Education",
+                "type": "entries",
+                "required": True,
+                "entryLabel": "School",
+                "primaryFields": ["degree", "school"],
+                "dateField": "year",
+                "fields": [
+                    {"key": "school", "label": "School", "type": "text", "placeholder": "", "required": True},
+                    {"key": "degree", "label": "Degree", "type": "text", "placeholder": "", "required": True},
+                    {"key": "year", "label": "Year", "type": "text", "placeholder": "", "required": False},
+                ],
+            },
+            {"key": "skills_hint", "label": "Key skills", "sectionLabel": "Skills", "type": "tags", "placeholder": "Type a skill and press Enter", "required": True},
+            {"key": "certifications_hint", "label": "Any certifications or licenses? (optional)", "sectionLabel": "Certifications", "type": "text", "placeholder": "", "required": False},
         ],
     },
     {
@@ -31,11 +72,53 @@ TEMPLATES = [
             {"key": "email", "label": "Email", "type": "text", "placeholder": "", "required": True},
             {"key": "phone", "label": "Phone", "type": "text", "placeholder": "", "required": True},
             {"key": "target_role", "label": "What role are you targeting?", "type": "text", "placeholder": "", "required": True},
-            {"key": "summary_hint", "label": "Pitch yourself in 2-3 sentences — what makes you a strong candidate?", "type": "textarea", "placeholder": "", "required": True},
-            {"key": "experience_hint", "label": "Your work experience — company, title, dates, and key achievements", "type": "list", "placeholder": "One entry per line", "required": True},
-            {"key": "education_hint", "label": "Your education background", "type": "list", "placeholder": "One entry per line", "required": True},
-            {"key": "skills_hint", "label": "Technical/professional skills, comma-separated", "type": "text", "placeholder": "", "required": True},
-            {"key": "projects_hint", "label": "Notable projects (name + short description, optional)", "type": "list", "placeholder": "One entry per line", "required": False},
+            {"key": "summary_hint", "label": "Pitch yourself in 2-3 sentences — what makes you a strong candidate?", "sectionLabel": "Summary", "type": "textarea", "placeholder": "", "required": True},
+            {
+                "key": "experience_hint",
+                "label": "Work experience",
+                "sectionLabel": "Experience",
+                "type": "entries",
+                "required": True,
+                "entryLabel": "Job",
+                "primaryFields": ["title", "company"],
+                "dateField": "dates",
+                "fields": [
+                    {"key": "company", "label": "Company", "type": "text", "placeholder": "", "required": True},
+                    {"key": "title", "label": "Title", "type": "text", "placeholder": "", "required": True},
+                    {"key": "dates", "label": "Dates", "type": "text", "placeholder": "e.g. Jan 2023 – Present", "required": False},
+                    {"key": "description", "label": "Key achievements", "type": "textarea", "placeholder": "", "required": True},
+                ],
+            },
+            {
+                "key": "education_hint",
+                "label": "Education",
+                "sectionLabel": "Education",
+                "type": "entries",
+                "required": True,
+                "entryLabel": "School",
+                "primaryFields": ["degree", "school"],
+                "dateField": "year",
+                "fields": [
+                    {"key": "school", "label": "School", "type": "text", "placeholder": "", "required": True},
+                    {"key": "degree", "label": "Degree", "type": "text", "placeholder": "", "required": True},
+                    {"key": "year", "label": "Year", "type": "text", "placeholder": "", "required": False},
+                ],
+            },
+            {"key": "skills_hint", "label": "Technical/professional skills", "sectionLabel": "Skills", "type": "tags", "placeholder": "Type a skill and press Enter", "required": True},
+            {
+                "key": "projects_hint",
+                "label": "Notable projects (optional)",
+                "sectionLabel": "Projects",
+                "type": "entries",
+                "required": False,
+                "entryLabel": "Project",
+                "primaryFields": ["name"],
+                "dateField": None,
+                "fields": [
+                    {"key": "name", "label": "Project name", "type": "text", "placeholder": "", "required": True},
+                    {"key": "description", "label": "What did you build?", "type": "textarea", "placeholder": "", "required": False},
+                ],
+            },
         ],
     },
     {
@@ -47,10 +130,39 @@ TEMPLATES = [
             {"key": "email", "label": "Email", "type": "text", "placeholder": "", "required": True},
             {"key": "phone", "label": "Phone", "type": "text", "placeholder": "", "required": True},
             {"key": "target_role", "label": "Role you're applying for", "type": "text", "placeholder": "", "required": True},
-            {"key": "summary_hint", "label": "Describe yourself professionally in a few words", "type": "textarea", "placeholder": "", "required": True},
-            {"key": "experience_hint", "label": "Career highlights: where you've worked and what you did", "type": "list", "placeholder": "One entry per line", "required": True},
-            {"key": "education_hint", "label": "Education", "type": "list", "placeholder": "One entry per line", "required": True},
-            {"key": "skills_hint", "label": "Skills, comma-separated", "type": "text", "placeholder": "", "required": True},
+            {"key": "summary_hint", "label": "Describe yourself professionally in a few words", "sectionLabel": "Summary", "type": "textarea", "placeholder": "", "required": True},
+            {
+                "key": "experience_hint",
+                "label": "Career highlights",
+                "sectionLabel": "Experience",
+                "type": "entries",
+                "required": True,
+                "entryLabel": "Job",
+                "primaryFields": ["title", "company"],
+                "dateField": "dates",
+                "fields": [
+                    {"key": "company", "label": "Company", "type": "text", "placeholder": "", "required": True},
+                    {"key": "title", "label": "Role", "type": "text", "placeholder": "", "required": True},
+                    {"key": "dates", "label": "Dates", "type": "text", "placeholder": "e.g. Jan 2023 – Present", "required": False},
+                    {"key": "description", "label": "What did you do there?", "type": "textarea", "placeholder": "", "required": True},
+                ],
+            },
+            {
+                "key": "education_hint",
+                "label": "Education",
+                "sectionLabel": "Education",
+                "type": "entries",
+                "required": True,
+                "entryLabel": "School",
+                "primaryFields": ["degree", "school"],
+                "dateField": "year",
+                "fields": [
+                    {"key": "school", "label": "School", "type": "text", "placeholder": "", "required": True},
+                    {"key": "degree", "label": "Degree", "type": "text", "placeholder": "", "required": True},
+                    {"key": "year", "label": "Year", "type": "text", "placeholder": "", "required": False},
+                ],
+            },
+            {"key": "skills_hint", "label": "Skills", "sectionLabel": "Skills", "type": "tags", "placeholder": "Type a skill and press Enter", "required": True},
             {"key": "linkedin_hint", "label": "LinkedIn or portfolio URL (optional)", "type": "text", "placeholder": "", "required": False},
         ],
     },
